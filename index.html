@@ -519,14 +519,13 @@ async function addMoney(){
   const a=getAcctLocal();a[addAcctSel]=(a[addAcctSel]||0)+amt;setAcctLocal(a);
   updateBalanceDisplay();
   document.getElementById('add-amount').value='';document.getElementById('add-note').value='';
-  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:new Date().toISOString()};
   addAcctHistory(addAcctSel,amt,note||'เพิ่มเงิน','เพิ่มเงิน');
   renderAcctHistory();
   showToast('เพิ่มเงินเข้า '+addAcctSel+' แล้ว ✓','g');
   const url=getUrl();
   if(url){
     const form=new FormData();
-    form.append('payload',JSON.stringify({action:'addMoney',account:addAcctSel,amount:amt,note:note,histItem}));
+    form.append('payload',JSON.stringify({action:'addMoney',account:addAcctSel,amount:amt,note:note}));
     fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
   }
 }
@@ -542,7 +541,6 @@ async function saveBalance(){
   const name=document.getElementById('bal-acct-name').value;
   const amt=parseFloat(document.getElementById('bal-new-amount').value)||0;
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
-  const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:new Date().toISOString()};
   addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
   updateBalanceDisplay();closeModal('modal-balance');
   renderAcctHistory();
@@ -550,7 +548,7 @@ async function saveBalance(){
   const url=getUrl();
   if(url){
     const form=new FormData();
-    form.append('payload',JSON.stringify({action:'editBalance',account:name,amount:amt,histItem:histItem2}));
+    form.append('payload',JSON.stringify({action:'editBalance',account:name,amount:amt}));
     fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
   }
 }
@@ -599,10 +597,6 @@ async function restoreFromSheets(){
       if(json.accounts&&json.accounts.length>0){
         const a={};json.accounts.forEach(ac=>a[ac.name]=ac.balance||0);
         setAcctLocal(a);updateBalanceDisplay();
-      }
-      if(json.acctHistory&&json.acctHistory.length>0){
-        localStorage.setItem('acct_history',JSON.stringify(json.acctHistory));
-        renderAcctHistory();
       }
       updateSyncStatus();renderSummary();
       showToast('กู้คืนข้อมูลแล้ว ✓','g');
