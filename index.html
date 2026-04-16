@@ -516,6 +516,27 @@ function selPay(val,hasSub,subId){
 function selSub(el,val){document.querySelectorAll('.sub-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');selSubVal=val;}
 
 // SAVE ENTRY
+// แปลงเวลา local เป็น ISO-like string โดยไม่เปลี่ยน timezone
+function toLocalISO(d){
+  const y=d.getFullYear();
+  const mo=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  const h=String(d.getHours()).padStart(2,'0');
+  const mi=String(d.getMinutes()).padStart(2,'0');
+  const s=String(d.getSeconds()).padStart(2,'0');
+  return y+'-'+mo+'-'+day+'T'+h+':'+mi+':'+s;
+}
+
+function toLocalISO(d){
+  const y=d.getFullYear();
+  const mo=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  const h=String(d.getHours()).padStart(2,'0');
+  const mi=String(d.getMinutes()).padStart(2,'0');
+  const s=String(d.getSeconds()).padStart(2,'0');
+  return y+'-'+mo+'-'+day+'T'+h+':'+mi+':'+s;
+}
+
 function saveEntry(){
   const amt=parseFloat(document.getElementById('amount').value.replace(/,/g,''));
   const noteVal=document.getElementById('note').value.trim();
@@ -571,8 +592,8 @@ async function addMoney(){
   const a=getAcctLocal();a[addAcctSel]=(a[addAcctSel]||0)+amt;setAcctLocal(a);
   updateBalanceDisplay();
   document.getElementById('add-amount').value='';document.getElementById('add-note').value='';
-  const _nt=new Date();const _thaiOffset=7*60*60*1000;
-  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:new Date(_nt.getTime()+_thaiOffset).toISOString()};
+  const _nt=new Date();
+  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:toLocalISO(_nt)};
   addAcctHistory(addAcctSel,amt,note||'เพิ่มเงิน','เพิ่มเงิน');
   renderAcctHistory();
   showToast('เพิ่มเงินเข้า '+addAcctSel+' แล้ว ✓','g');
@@ -595,7 +616,7 @@ async function saveBalance(){
   const name=document.getElementById('bal-acct-name').value;
   const amt=parseFloat(document.getElementById('bal-new-amount').value)||0;
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
-  const _nt2=new Date();const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:new Date(_nt2.getTime()+7*60*60*1000).toISOString()};
+  const _nt2=new Date();const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:toLocalISO(_nt2)};
   addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
   updateBalanceDisplay();closeModal('modal-balance');
   renderAcctHistory();
@@ -826,10 +847,16 @@ function renderAcctHistory(){
   h.forEach(item=>{
     // ใช้วันที่จาก Sheets โดยตรง (item.day) เหมือนหน้าสรุป
     const dBase=new Date(item.date);
-    const useDay=item.day||dBase.getDate();
+    // ถ้า date เป็น local ISO (ไม่มี Z) ใช้ local methods ตรงๆ
+    const isLocal=!String(item.date).endsWith('Z')&&!String(item.date).includes('+');
+    const useDay=item.day||(isLocal?dBase.getDate():new Date(dBase.getTime()+7*60*60*1000).getUTCDate());
+    const useMonth=isLocal?dBase.getMonth():new Date(dBase.getTime()+7*60*60*1000).getUTCMonth();
+    const useYear=isLocal?dBase.getFullYear():new Date(dBase.getTime()+7*60*60*1000).getUTCFullYear();
+    const useH=isLocal?dBase.getHours():new Date(dBase.getTime()+7*60*60*1000).getUTCHours();
+    const useM=isLocal?dBase.getMinutes():new Date(dBase.getTime()+7*60*60*1000).getUTCMinutes();
     const MTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    const dStr=useDay+' '+MTHS[dBase.getMonth()]+' '+(dBase.getFullYear()+543);
-    const tStr=dBase.getHours().toString().padStart(2,'0')+':'+dBase.getMinutes().toString().padStart(2,'0');
+    const dStr=useDay+' '+MTHS[useMonth]+' '+(useYear+543);
+    const tStr=useH.toString().padStart(2,'0')+':'+useM.toString().padStart(2,'0');
     const isMain=item.acct==='บัญชีหลัก';
     const isAdd=item.type==='เพิ่มเงิน';
     html+=`<div style="padding:12px 0;border-top:1px solid var(--border);">
