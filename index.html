@@ -336,7 +336,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
     <input type="hidden" id="hist-edit-id">
     <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="number" inputmode="decimal"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
     <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
@@ -351,7 +351,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
     <input type="hidden" id="hist-edit-id">
     <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="number" inputmode="decimal"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
     <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
@@ -390,7 +390,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
       </select>
     </div>
     <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="edit-amount" type="number" inputmode="decimal"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
     <div class="modal-row"><div class="modal-lbl">รายละเอียด</div><input class="modal-input" id="edit-note" type="text"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-edit')">ยกเลิก</button>
@@ -734,7 +734,7 @@ function saveEdit(){
   const cat=document.getElementById('edit-cat').value;
   const pay=document.getElementById('edit-pay').value;
   const sub=pay==='บัตรเครดิต'?document.getElementById('edit-sub').value:'';
-  const amt=parseFloat(document.getElementById('edit-amount').value);
+  const amt=parseFloat(document.getElementById('edit-amount').value.replace(/,/g,''));
   const note=document.getElementById('edit-note').value.trim();
   const dateVal=document.getElementById('edit-date').value;
   if(!amt||amt<=0){showToast('ใส่จำนวนเงิน','a');return;}
