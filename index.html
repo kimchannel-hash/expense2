@@ -592,6 +592,7 @@ async function syncEntry(entry){
 
 async function syncNow(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
+  if(!confirm('ซิงค์ข้อมูลไปยัง Sheets ทันที?'))return;
   const pending=getEntries().filter(e=>!e.synced);
   if(!pending.length){showToast('ทุกรายการซิงค์แล้ว ✓','g');return;}
   showToast('กำลังซิงค์...','a');
@@ -606,6 +607,7 @@ async function syncNow(){
 
 async function restoreFromSheets(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
+  if(!confirm('กู้คืนข้อมูลจาก Sheets?\nข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลจาก Sheets'))return;
   showToast('กำลังดึงข้อมูล...','a');
   try{
     // ใช้ JSONP เพื่อ bypass CORS บน Safari/iPhone
@@ -791,9 +793,11 @@ function renderAcctHistory(){
   if(!h.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">ยังไม่มีประวัติ</div>';return;}
   let html='';
   h.forEach(item=>{
-    const d=new Date(item.date);
-    const dStr=d.getDate()+' '+['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()]+' '+(d.getFullYear()+543);
-    const tStr=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    // แปลงเป็น timezone ไทย UTC+7
+    const dRaw=new Date(item.date);
+    const dThai=new Date(dRaw.getTime()+7*60*60*1000);
+    const dStr=dThai.getUTCDate()+' '+['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dThai.getUTCMonth()]+' '+(dThai.getUTCFullYear()+543);
+    const tStr=dThai.getUTCHours().toString().padStart(2,'0')+':'+dThai.getUTCMinutes().toString().padStart(2,'0');
     const isMain=item.acct==='บัญชีหลัก';
     const isAdd=item.type==='เพิ่มเงิน';
     html+=`<div style="padding:12px 0;border-top:1px solid var(--border);">
@@ -822,9 +826,24 @@ function renderAcctHistory(){
 
 function deleteAcctHistory(id){
   if(!confirm('ลบรายการนี้?'))return;
+  // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
+  const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
   localStorage.setItem('acct_history',JSON.stringify(h));
+  // คืนยอดบัญชีใน local
+  if(item&&item.type==='เพิ่มเงิน'){
+    const a=getAcctLocal();
+    a[item.acct]=(a[item.acct]||0)-item.amount;
+    setAcctLocal(a);updateBalanceDisplay();
+  }
   renderAcctHistory();showToast('ลบแล้ว','r');
+  // sync ไป Sheets
+  const url=getUrl();
+  if(url){
+    const form=new FormData();
+    form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
+    fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
+  }
 }
 
 
@@ -850,9 +869,24 @@ function editAcctHistory(id){
 
 function deleteAcctHistory(id){
   if(!confirm('ลบรายการนี้?'))return;
+  // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
+  const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
   localStorage.setItem('acct_history',JSON.stringify(h));
+  // คืนยอดบัญชีใน local
+  if(item&&item.type==='เพิ่มเงิน'){
+    const a=getAcctLocal();
+    a[item.acct]=(a[item.acct]||0)-item.amount;
+    setAcctLocal(a);updateBalanceDisplay();
+  }
   renderAcctHistory();showToast('ลบแล้ว','r');
+  // sync ไป Sheets
+  const url=getUrl();
+  if(url){
+    const form=new FormData();
+    form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
+    fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
+  }
 }
 
 selAddAcct('บัญชีหลัก');
