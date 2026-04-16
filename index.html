@@ -824,9 +824,12 @@ function renderAcctHistory(){
   if(!h.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">ยังไม่มีประวัติ</div>';return;}
   let html='';
   h.forEach(item=>{
-    const dThai=new Date(item.date);
-    const dStr=dThai.getUTCDate()+' '+['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dThai.getUTCMonth()]+' '+(dThai.getUTCFullYear()+543);
-    const tStr=dThai.getUTCHours().toString().padStart(2,'0')+':'+dThai.getUTCMinutes().toString().padStart(2,'0');
+    // ใช้วันที่จาก Sheets โดยตรง (item.day) เหมือนหน้าสรุป
+    const dBase=new Date(item.date);
+    const useDay=item.day||dBase.getDate();
+    const MTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const dStr=useDay+' '+MTHS[dBase.getMonth()]+' '+(dBase.getFullYear()+543);
+    const tStr=dBase.getHours().toString().padStart(2,'0')+':'+dBase.getMinutes().toString().padStart(2,'0');
     const isMain=item.acct==='บัญชีหลัก';
     const isAdd=item.type==='เพิ่มเงิน';
     html+=`<div style="padding:12px 0;border-top:1px solid var(--border);">
@@ -860,9 +863,12 @@ function deleteAcctHistory(id){
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
   localStorage.setItem('acct_history',JSON.stringify(h));
   // คืนยอดบัญชีใน local
-  if(item&&item.type==='เพิ่มเงิน'){
+  if(item){
     const a=getAcctLocal();
-    a[item.acct]=(a[item.acct]||0)-item.amount;
+    if(item.type==='เพิ่มเงิน'){
+      // ลดยอดเงินเติม = ลดยอดคงเหลือ
+      a[item.acct]=(a[item.acct]||0)-item.amount;
+    }
     setAcctLocal(a);updateBalanceDisplay();
   }
   renderAcctHistory();showToast('ลบแล้ว','r');
@@ -931,9 +937,12 @@ function deleteAcctHistory(id){
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
   localStorage.setItem('acct_history',JSON.stringify(h));
   // คืนยอดบัญชีใน local
-  if(item&&item.type==='เพิ่มเงิน'){
+  if(item){
     const a=getAcctLocal();
-    a[item.acct]=(a[item.acct]||0)-item.amount;
+    if(item.type==='เพิ่มเงิน'){
+      // ลดยอดเงินเติม = ลดยอดคงเหลือ
+      a[item.acct]=(a[item.acct]||0)-item.amount;
+    }
     setAcctLocal(a);updateBalanceDisplay();
   }
   renderAcctHistory();showToast('ลบแล้ว','r');
