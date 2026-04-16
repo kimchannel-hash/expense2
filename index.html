@@ -64,9 +64,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .pay-chip.s-cash{background:rgba(0,229,160,0.1);border-color:var(--green);}.pay-chip.s-cash .pay-name{color:var(--green);}
 .pay-chip.s-bank{background:rgba(91,156,246,0.1);border-color:var(--blue);}.pay-chip.s-bank .pay-name{color:var(--blue);}
 .pay-chip.s-card{background:rgba(180,138,255,0.1);border-color:var(--purple);}.pay-chip.s-card .pay-name{color:var(--purple);}
-.sub-chips{margin-top:10px;display:none;flex-wrap:wrap;gap:8px;}
-.sub-chips.visible{display:flex;}
-.sub-chip{padding:9px 18px;border-radius:40px;border:1px solid var(--border2);font-size:15px;font-weight:500;cursor:pointer;color:var(--text2);background:var(--bg3);transition:all 0.15s;font-family:var(--mono);}
+.sub-chips{margin-top:10px;display:none;gap:6px;}
+.sub-chips.visible{display:grid;grid-template-columns:repeat(5,1fr);}
+.sub-chip{padding:10px 4px;border-radius:12px;border:1px solid var(--border2);font-size:14px;font-weight:600;cursor:pointer;color:var(--text2);background:var(--bg3);transition:all 0.15s;font-family:var(--mono);text-align:center;}
 .sub-chip.sel{background:rgba(91,156,246,0.15);border-color:var(--blue);color:var(--blue);}
 
 /* AMOUNT */
@@ -75,6 +75,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .amount-curr{font-size:28px;color:var(--text3);font-family:var(--mono);}
 .amount-input{flex:1;background:none;border:none;outline:none;font-size:44px;font-weight:600;color:var(--text);font-family:var(--mono);width:100%;letter-spacing:-1px;}
 .amount-input::placeholder{color:var(--text3);}
+.amount-input::-webkit-inner-spin-button,.amount-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.amount-input::-webkit-inner-spin-button,.amount-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.amount-input::-webkit-inner-spin-button,.amount-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.amount-input[type=number]{-moz-appearance:textfield;}
 .note-input{width:100%;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--r);padding:14px 16px;color:var(--text);font-family:var(--font);font-size:17px;outline:none;resize:none;transition:border-color 0.2s;}
 .note-input:focus{border-color:var(--green);}
 .note-input::placeholder{color:var(--text3);}
@@ -239,7 +243,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         <div class="field-label">จำนวนเงิน</div>
         <div class="amount-box">
           <span class="amount-curr">฿</span>
-          <input class="amount-input" type="number" id="amount" placeholder="0" min="0" inputmode="decimal" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('note').focus();}">
+          <input class="amount-input" type="text" id="amount" placeholder="0" inputmode="decimal" enterkeyhint="next"
+  oninput="formatAmountInput(this)"
+  onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('note').focus();}">
         </div>
       </div>
       <div class="field-group">
@@ -479,7 +485,7 @@ function selSub(el,val){document.querySelectorAll('.sub-chip').forEach(c=>c.clas
 
 // SAVE ENTRY
 function saveEntry(){
-  const amt=parseFloat(document.getElementById('amount').value);
+  const amt=parseFloat(document.getElementById('amount').value.replace(/,/g,''));
   const noteVal=document.getElementById('note').value.trim();
   if(!selCatVal){showToast('เลือกหมวดก่อนนะ','a');return;}
   if(!selPayVal){showToast('เลือกช่องทางชำระก่อนนะ','a');return;}
@@ -493,7 +499,7 @@ function saveEntry(){
   // deduct from local balance
   const a=getAcctLocal();a[acctName]=(a[acctName]||0)-amt;setAcctLocal(a);
   // reset
-  document.getElementById('amount').value='';document.getElementById('note').value='';
+  document.getElementById('amount').value='';document.getElementById('amount-display').style.display='none';document.getElementById('note').value='';
   document.querySelectorAll('.cat-chip').forEach(c=>{c.classList.remove('sel-cat');c.style.background='';c.style.borderColor='';c.style.boxShadow='';c.querySelector('.cat-name').style.color='';});
   document.querySelectorAll('.pay-chip').forEach(c=>c.className='pay-chip');
   document.querySelectorAll('.sub-chip').forEach(c=>c.classList.remove('sel'));
@@ -519,13 +525,14 @@ async function addMoney(){
   const a=getAcctLocal();a[addAcctSel]=(a[addAcctSel]||0)+amt;setAcctLocal(a);
   updateBalanceDisplay();
   document.getElementById('add-amount').value='';document.getElementById('add-note').value='';
+  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:new Date().toISOString()};
   addAcctHistory(addAcctSel,amt,note||'เพิ่มเงิน','เพิ่มเงิน');
   renderAcctHistory();
   showToast('เพิ่มเงินเข้า '+addAcctSel+' แล้ว ✓','g');
   const url=getUrl();
   if(url){
     const form=new FormData();
-    form.append('payload',JSON.stringify({action:'addMoney',account:addAcctSel,amount:amt,note:note}));
+    form.append('payload',JSON.stringify({action:'addMoney',account:addAcctSel,amount:amt,note:note,histItem}));
     fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
   }
 }
@@ -541,6 +548,7 @@ async function saveBalance(){
   const name=document.getElementById('bal-acct-name').value;
   const amt=parseFloat(document.getElementById('bal-new-amount').value)||0;
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
+  const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:new Date().toISOString()};
   addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
   updateBalanceDisplay();closeModal('modal-balance');
   renderAcctHistory();
@@ -548,7 +556,7 @@ async function saveBalance(){
   const url=getUrl();
   if(url){
     const form=new FormData();
-    form.append('payload',JSON.stringify({action:'editBalance',account:name,amount:amt}));
+    form.append('payload',JSON.stringify({action:'editBalance',account:name,amount:amt,histItem:histItem2}));
     fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
   }
 }
@@ -584,10 +592,11 @@ async function restoreFromSheets(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
   showToast('กำลังดึงข้อมูล...','a');
   try{
-    const res=await fetch(url+'?action=getAll');
+    const res=await fetch(url+'?action=getAll',{method:'GET',mode:'cors',cache:'no-cache'});
     const json=await res.json();
     if(json.status==='ok'){
-      if(json.entries&&json.entries.length>0){
+      // Sheets เป็นหลักเสมอ — ทับข้อมูลในเครื่องทั้งหมด
+      if(json.entries){
         const restored=json.entries.map(e=>{
           const d=new Date(e.isoDate||new Date().toISOString());
           return{id:Number(e.id),cat:e.cat,pay:e.pay,sub:(e.sub&&e.sub!=='-')?e.sub:'',acct:e.acct||'บัญชีหลัก',amount:parseFloat(e.amount)||0,note:e.note||'',date:d.toISOString(),d:d.getDate(),m:d.getMonth(),y:d.getFullYear(),synced:true};
@@ -598,8 +607,12 @@ async function restoreFromSheets(){
         const a={};json.accounts.forEach(ac=>a[ac.name]=ac.balance||0);
         setAcctLocal(a);updateBalanceDisplay();
       }
+      if(json.acctHistory){
+        localStorage.setItem('acct_history',JSON.stringify(json.acctHistory));
+        renderAcctHistory();
+      }
       updateSyncStatus();renderSummary();
-      showToast('กู้คืนข้อมูลแล้ว ✓','g');
+      showToast('กู้คืนสำเร็จ '+( json.entries?json.entries.length:0)+' รายการ ✓','g');
     }
   }catch(err){showToast('ดึงข้อมูลไม่ได้ ลองใหม่','r');}
 }
@@ -704,9 +717,9 @@ function renderSummary(){
       <div class="pay-mini" onclick="filterBy('ธนาคาร')" style="cursor:pointer;${sel('ธนาคาร')}"><div class="pay-mini-icon">🏦</div><div class="pay-mini-lbl">ธนาคาร</div><div class="pay-mini-val" style="color:#5b9cf6">฿${fmt(bank)}</div></div>
       <div class="pay-mini" onclick="filterBy('บัตรเครดิต')" style="cursor:pointer;${sel('บัตรเครดิต')}"><div class="pay-mini-icon">💳</div><div class="pay-mini-lbl">บัตรเครดิต</div><div class="pay-mini-val" style="color:#b48aff">฿${fmt(cc)}</div></div>
     </div>
-    <div class="pay-grid">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <div class="pay-mini" onclick="filterBy('บัญชีหลัก')" style="cursor:pointer;${sel('บัญชีหลัก')}"><div class="pay-mini-icon">🏦</div><div class="pay-mini-lbl">บัญชีหลัก</div><div class="pay-mini-val" style="color:#00e5a0">฿${fmt(mainAmt)}</div></div>
-      <div class="pay-mini" onclick="filterBy('บัญชีหลิงหลิง')" style="cursor:pointer;${sel('บัญชีหลิงหลิง')}"><div class="pay-mini-icon">🎀</div><div class="pay-mini-lbl">บัญชีหลิงหลิง</div><div class="pay-mini-val" style="color:#ff85c0">฿${fmt(lingAmt)}</div></div>
+      <div class="pay-mini" onclick="filterBy('บัญชีหลิงหลิง')" style="cursor:pointer;${sel('บัญชีหลิงหลิง')}"><div class="pay-mini-icon">🏫</div><div class="pay-mini-lbl">บัญชีค่าเรียน</div><div class="pay-mini-val" style="color:#ff85c0">฿${fmt(lingAmt)}</div></div>
     </div>`;
   if(Object.keys(subs).length){
     html+=`<div class="sub-grid">`;
@@ -759,19 +772,63 @@ function renderAcctHistory(){
     const tStr=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     const isMain=item.acct==='บัญชีหลัก';
     const isAdd=item.type==='เพิ่มเงิน';
-    html+=`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;">${dStr} ${tStr}</div>
-        <div style="font-size:15px;color:var(--text2);margin-bottom:4px;">${item.note||item.type}</div>
-        <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${isMain?'rgba(0,229,160,0.1)':'rgba(255,133,192,0.1)'};color:${isMain?'var(--green)':'var(--pink)'};">${item.acct}</span>
+    html+=`<div style="padding:12px 0;border-top:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;">${dStr} ${tStr}</div>
+          <div style="font-size:15px;color:var(--text2);margin-bottom:4px;">${item.note||item.type}</div>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${isMain?'rgba(0,229,160,0.1)':'rgba(255,133,192,0.1)'};color:${isMain?'var(--green)':'var(--pink)'};">${item.acct}</span>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+          <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${isAdd?'var(--green)':'var(--amber)'};">${isAdd?'+':''}฿${fmt(item.amount)}</div>
+          <div style="font-size:12px;color:var(--text3);">${item.type}</div>
+        </div>
       </div>
-      <div style="text-align:right;flex-shrink:0;margin-left:12px;">
-        <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${isAdd?'var(--green)':'var(--amber)'};">${isAdd?'+':''}฿${fmt(item.amount)}</div>
-        <div style="font-size:12px;color:var(--text3);">${item.type}</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="editAcctHistory('${item.id}')" style="font-size:13px;padding:5px 12px;border-radius:8px;border:none;background:rgba(91,156,246,0.12);color:var(--blue);cursor:pointer;font-family:var(--font);font-weight:600;">✏️ แก้ไข</button>
+        <button onclick="deleteAcctHistory('${item.id}')" style="font-size:13px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,77,109,0.1);color:var(--red);cursor:pointer;font-family:var(--font);font-weight:600;">🗑 ลบ</button>
       </div>
     </div>`;
   });
   el.innerHTML=html;
+}
+
+
+
+
+function deleteAcctHistory(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
+  localStorage.setItem('acct_history',JSON.stringify(h));
+  renderAcctHistory();showToast('ลบแล้ว','r');
+}
+
+
+function formatAmountInput(el){
+  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
+  const parts=raw.split('.');
+  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
+  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
+}
+
+function editAcctHistory(id){
+  const h=getAcctHistory();
+  const item=h.find(i=>String(i.id)===String(id));
+  if(!item)return;
+  const newNote=prompt('แก้ไขหมายเหตุ:',item.note||'');
+  if(newNote===null)return;
+  const newAmt=prompt('แก้ไขจำนวนเงิน:',item.amount);
+  if(newAmt===null)return;
+  item.note=newNote;item.amount=parseFloat(newAmt)||item.amount;
+  localStorage.setItem('acct_history',JSON.stringify(h));
+  renderAcctHistory();showToast('แก้ไขประวัติแล้ว ✓','g');
+}
+
+function deleteAcctHistory(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
+  localStorage.setItem('acct_history',JSON.stringify(h));
+  renderAcctHistory();showToast('ลบแล้ว','r');
 }
 
 selAddAcct('บัญชีหลัก');
