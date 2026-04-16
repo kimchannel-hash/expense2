@@ -274,6 +274,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         <input class="note-input" type="text" id="add-note" placeholder="หมายเหตุ เช่น เติมรายเดือน" style="margin-bottom:12px;font-size:15px;padding:12px 16px;">
         <button class="add-btn" onclick="addMoney()">เพิ่มเงินเข้าบัญชี</button>
       </div>
+      <div class="setup-box" style="margin-top:0;">
+        <div class="add-money-title" style="margin-bottom:14px;">📋 ประวัติการเพิ่มเงิน</div>
+        <div id="acct-history"></div>
+      </div>
     </div>
 
     <!-- SUMMARY TAB -->
@@ -396,6 +400,12 @@ function getUrl(){return localStorage.getItem('gas_url_v2')||'';}
 function getEntries(){try{return JSON.parse(localStorage.getItem('exp_v5')||'[]');}catch(e){return[];}}
 function setEntries(a){localStorage.setItem('exp_v5',JSON.stringify(a));}
 function getAcctLocal(){try{return JSON.parse(localStorage.getItem('acct_v2')||'{"บัญชีหลัก":0,"บัญชีหลิงหลิง":0}');}catch(e){return{"บัญชีหลัก":0,"บัญชีหลิงหลิง":0};}}
+function getAcctHistory(){try{return JSON.parse(localStorage.getItem('acct_history')||'[]');}catch(e){return[];}}
+function addAcctHistory(acct,amount,note,type){
+  const h=getAcctHistory();
+  h.unshift({id:Date.now(),acct,amount,note,type,date:new Date().toISOString()});
+  localStorage.setItem('acct_history',JSON.stringify(h.slice(0,100)));
+}
 function setAcctLocal(a){localStorage.setItem('acct_v2',JSON.stringify(a));}
 
 function updateSyncStatus(){
@@ -427,7 +437,7 @@ function switchTab(t){
   });
   document.getElementById('save-wrap').style.display=t==='add'?'':'none';
   if(t==='summary'){filterKey='';renderSummary();}
-  if(t==='account'){updateBalanceDisplay();}
+  if(t==='account'){updateBalanceDisplay();renderAcctHistory();}
   if(t==='setup'){renderSetup();}
 }
 
@@ -509,11 +519,14 @@ async function addMoney(){
   const a=getAcctLocal();a[addAcctSel]=(a[addAcctSel]||0)+amt;setAcctLocal(a);
   updateBalanceDisplay();
   document.getElementById('add-amount').value='';document.getElementById('add-note').value='';
+  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:new Date().toISOString()};
+  addAcctHistory(addAcctSel,amt,note||'เพิ่มเงิน','เพิ่มเงิน');
+  renderAcctHistory();
   showToast('เพิ่มเงินเข้า '+addAcctSel+' แล้ว ✓','g');
   const url=getUrl();
   if(url){
     const form=new FormData();
-    form.append('payload',JSON.stringify({action:'addMoney',account:addAcctSel,amount:amt,note:note}));
+    form.append('payload',JSON.stringify({action:'addMoney',account:addAcctSel,amount:amt,note:note,histItem}));
     fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
   }
 }
@@ -529,12 +542,15 @@ async function saveBalance(){
   const name=document.getElementById('bal-acct-name').value;
   const amt=parseFloat(document.getElementById('bal-new-amount').value)||0;
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
+  const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:new Date().toISOString()};
+  addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
   updateBalanceDisplay();closeModal('modal-balance');
+  renderAcctHistory();
   showToast('แก้ไขยอด '+name+' แล้ว ✓','g');
   const url=getUrl();
   if(url){
     const form=new FormData();
-    form.append('payload',JSON.stringify({action:'editBalance',account:name,amount:amt}));
+    form.append('payload',JSON.stringify({action:'editBalance',account:name,amount:amt,histItem:histItem2}));
     fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
   }
 }
@@ -583,6 +599,10 @@ async function restoreFromSheets(){
       if(json.accounts&&json.accounts.length>0){
         const a={};json.accounts.forEach(ac=>a[ac.name]=ac.balance||0);
         setAcctLocal(a);updateBalanceDisplay();
+      }
+      if(json.acctHistory&&json.acctHistory.length>0){
+        localStorage.setItem('acct_history',JSON.stringify(json.acctHistory));
+        renderAcctHistory();
       }
       updateSyncStatus();renderSummary();
       showToast('กู้คืนข้อมูลแล้ว ✓','g');
@@ -731,6 +751,33 @@ function renderSummary(){
 function showToast(msg,type){
   const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;
   t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function renderAcctHistory(){
+  const el=document.getElementById('acct-history');
+  if(!el)return;
+  const h=getAcctHistory();
+  if(!h.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">ยังไม่มีประวัติ</div>';return;}
+  let html='';
+  h.forEach(item=>{
+    const d=new Date(item.date);
+    const dStr=d.getDate()+' '+['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()]+' '+(d.getFullYear()+543);
+    const tStr=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    const isMain=item.acct==='บัญชีหลัก';
+    const isAdd=item.type==='เพิ่มเงิน';
+    html+=`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;">${dStr} ${tStr}</div>
+        <div style="font-size:15px;color:var(--text2);margin-bottom:4px;">${item.note||item.type}</div>
+        <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${isMain?'rgba(0,229,160,0.1)':'rgba(255,133,192,0.1)'};color:${isMain?'var(--green)':'var(--pink)'};">${item.acct}</span>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+        <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:${isAdd?'var(--green)':'var(--amber)'};">${isAdd?'+':''}฿${fmt(item.amount)}</div>
+        <div style="font-size:12px;color:var(--text3);">${item.type}</div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
 }
 
 selAddAcct('บัญชีหลัก');
