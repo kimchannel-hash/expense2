@@ -330,6 +330,36 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 <div class="toast g" id="toast"></div>
 
+<!-- EDIT ACCT HISTORY MODAL -->
+<div class="modal-overlay" id="modal-hist-edit" onclick="if(event.target===this)closeModal('modal-hist-edit')">
+  <div class="modal">
+    <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
+    <input type="hidden" id="hist-edit-id">
+    <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="number" inputmode="decimal"></div>
+    <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
+      <button class="modal-save" onclick="saveHistEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ACCT HISTORY MODAL -->
+<div class="modal-overlay" id="modal-hist-edit" onclick="if(event.target===this)closeModal('modal-hist-edit')">
+  <div class="modal">
+    <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
+    <input type="hidden" id="hist-edit-id">
+    <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="number" inputmode="decimal"></div>
+    <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
+      <button class="modal-save" onclick="saveHistEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT EXPENSE MODAL -->
 <div class="modal-overlay" id="modal-edit" onclick="if(event.target===this)closeModal('modal-edit')">
   <div class="modal">
@@ -541,7 +571,8 @@ async function addMoney(){
   const a=getAcctLocal();a[addAcctSel]=(a[addAcctSel]||0)+amt;setAcctLocal(a);
   updateBalanceDisplay();
   document.getElementById('add-amount').value='';document.getElementById('add-note').value='';
-  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:new Date().toISOString()};
+  const _nt=new Date();const _thaiOffset=7*60*60*1000;
+  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:new Date(_nt.getTime()+_thaiOffset).toISOString()};
   addAcctHistory(addAcctSel,amt,note||'เพิ่มเงิน','เพิ่มเงิน');
   renderAcctHistory();
   showToast('เพิ่มเงินเข้า '+addAcctSel+' แล้ว ✓','g');
@@ -564,7 +595,7 @@ async function saveBalance(){
   const name=document.getElementById('bal-acct-name').value;
   const amt=parseFloat(document.getElementById('bal-new-amount').value)||0;
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
-  const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:new Date().toISOString()};
+  const _nt2=new Date();const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:new Date(_nt2.getTime()+7*60*60*1000).toISOString()};
   addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
   updateBalanceDisplay();closeModal('modal-balance');
   renderAcctHistory();
@@ -793,9 +824,7 @@ function renderAcctHistory(){
   if(!h.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:20px;font-size:14px;">ยังไม่มีประวัติ</div>';return;}
   let html='';
   h.forEach(item=>{
-    // แปลงเป็น timezone ไทย UTC+7
-    const dRaw=new Date(item.date);
-    const dThai=new Date(dRaw.getTime()+7*60*60*1000);
+    const dThai=new Date(item.date);
     const dStr=dThai.getUTCDate()+' '+['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dThai.getUTCMonth()]+' '+(dThai.getUTCFullYear()+543);
     const tStr=dThai.getUTCHours().toString().padStart(2,'0')+':'+dThai.getUTCMinutes().toString().padStart(2,'0');
     const isMain=item.acct==='บัญชีหลัก';
@@ -858,12 +887,40 @@ function editAcctHistory(id){
   const h=getAcctHistory();
   const item=h.find(i=>String(i.id)===String(id));
   if(!item)return;
-  const newNote=prompt('แก้ไขหมายเหตุ:',item.note||'');
-  if(newNote===null)return;
-  const newAmt=prompt('แก้ไขจำนวนเงิน:',item.amount);
-  if(newAmt===null)return;
-  item.note=newNote;item.amount=parseFloat(newAmt)||item.amount;
-  localStorage.setItem('acct_history',JSON.stringify(h));
+  // ตั้งค่า modal
+  document.getElementById('hist-edit-id').value=id;
+  document.getElementById('hist-edit-amount').value=item.amount;
+  document.getElementById('hist-edit-note').value=item.note||'';
+  // แปลงวันที่เป็น input date
+  const dRaw=new Date(item.date);
+  const dThai=new Date(dRaw.getTime()+7*60*60*1000);
+  const yyyy=dThai.getUTCFullYear();
+  const mm=String(dThai.getUTCMonth()+1).padStart(2,'0');
+  const dd=String(dThai.getUTCDate()).padStart(2,'0');
+  document.getElementById('hist-edit-date').value=yyyy+'-'+mm+'-'+dd;
+  document.getElementById('modal-hist-edit').classList.add('show');
+}
+
+function saveHistEdit(){
+  const id=document.getElementById('hist-edit-id').value;
+  const amt=parseFloat(document.getElementById('hist-edit-amount').value.replace(/,/g,''));
+  const note=document.getElementById('hist-edit-note').value.trim();
+  const dateVal=document.getElementById('hist-edit-date').value;
+  if(!amt||amt<=0){showToast('ใส่จำนวนเงิน','a');return;}
+  const h=getAcctHistory();
+  const idx=h.findIndex(i=>String(i.id)===String(id));
+  if(idx>=0){
+    h[idx].amount=amt;
+    h[idx].note=note;
+    if(dateVal){
+      // แปลง date input (local) กลับเป็น ISO โดยใช้ timezone ไทย
+      const parts=dateVal.split('-');
+      const newDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]),12,0,0);
+      h[idx].date=newDate.toISOString();
+    }
+    localStorage.setItem('acct_history',JSON.stringify(h));
+  }
+  closeModal('modal-hist-edit');
   renderAcctHistory();showToast('แก้ไขประวัติแล้ว ✓','g');
 }
 
