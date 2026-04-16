@@ -102,6 +102,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .acct-sel-btn.sel-main{border-color:var(--green);background:rgba(0,229,160,0.1);color:var(--green);}
 .acct-sel-btn.sel-ling{border-color:var(--pink);background:rgba(255,133,192,0.1);color:var(--pink);}
 .money-input{width:100%;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--r);padding:14px 16px;color:var(--text);font-size:20px;font-family:var(--mono);outline:none;margin-bottom:10px;transition:border-color 0.2s;}
+.money-input::-webkit-inner-spin-button,.money-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.money-input::-webkit-inner-spin-button,.money-input::-webkit-outer-spin-button{-webkit-appearance:none;}
 .money-input:focus{border-color:var(--green);}
 .add-btn{width:100%;padding:14px;background:var(--green);border:none;border-radius:var(--r);font-size:16px;font-weight:700;color:#001a0d;cursor:pointer;font-family:var(--font);}
 
@@ -276,7 +278,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
           <div class="acct-sel-btn" id="am-main" onclick="selAddAcct('บัญชีหลัก')">🏦 บัญชีหลัก</div>
           <div class="acct-sel-btn" id="am-ling" onclick="selAddAcct('บัญชีหลิงหลิง')">🏫 บัญชีค่าเรียน</div>
         </div>
-        <input class="money-input" type="number" id="add-amount" placeholder="จำนวนเงิน (บาท)" inputmode="decimal">
+        <input class="money-input" type="text" id="add-amount" placeholder="จำนวนเงิน (บาท)" inputmode="decimal" oninput="formatMoneyInput(this)">
         <input class="note-input" type="text" id="add-note" placeholder="หมายเหตุ เช่น เติมรายเดือน" style="margin-bottom:12px;font-size:15px;padding:12px 16px;">
         <button class="add-btn" onclick="addMoney()">เพิ่มเงินเข้าบัญชี</button>
       </div>
@@ -512,6 +514,20 @@ function saveEntry(){
 }
 
 // ACCOUNT
+function formatMoneyInput(el){
+  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
+  const parts=raw.split('.');
+  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
+  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
+}
+
+function formatMoneyInput(el){
+  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
+  const parts=raw.split('.');
+  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
+  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
+}
+
 function selAddAcct(name){
   addAcctSel=name;
   document.getElementById('am-main').className='acct-sel-btn'+(name==='บัญชีหลัก'?' sel-main':'');
@@ -519,7 +535,7 @@ function selAddAcct(name){
 }
 
 async function addMoney(){
-  const amt=parseFloat(document.getElementById('add-amount').value);
+  const amt=parseFloat(document.getElementById('add-amount').value.replace(/,/g,''));
   const note=document.getElementById('add-note').value.trim();
   if(!amt||amt<=0){showToast('ใส่จำนวนเงินก่อนนะ','a');return;}
   const a=getAcctLocal();a[addAcctSel]=(a[addAcctSel]||0)+amt;setAcctLocal(a);
