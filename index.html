@@ -404,7 +404,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   <div class="modal">
     <div class="modal-title">✏️ แก้ไขยอดบัญชี</div>
     <input type="hidden" id="bal-acct-name">
-    <div class="modal-row"><div class="modal-lbl">ยอดคงเหลือใหม่ (บาท)</div><input class="modal-input" id="bal-new-amount" type="number" inputmode="decimal"></div>
+    <div class="modal-row"><div class="modal-lbl">ยอดคงเหลือใหม่ (บาท)</div><input class="modal-input" id="bal-new-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-balance')">ยกเลิก</button>
       <button class="modal-save" onclick="saveBalance()">บันทึก</button>
@@ -614,13 +614,17 @@ function openEditBalance(name){
 
 async function saveBalance(){
   const name=document.getElementById('bal-acct-name').value;
-  const amt=parseFloat(document.getElementById('bal-new-amount').value)||0;
+  const rawVal=document.getElementById('bal-new-amount').value.replace(/,/g,'');
+  const amt=parseFloat(rawVal)||0;
+  // set ยอดคงเหลือใน local
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
-  const _nt2=new Date();const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:toLocalISO(_nt2)};
+  const _nt2=new Date();
+  const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:toLocalISO(_nt2)};
   addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
   updateBalanceDisplay();closeModal('modal-balance');
   renderAcctHistory();
   showToast('แก้ไขยอด '+name+' แล้ว ✓','g');
+  // sync ไป Sheets — ส่ง amount = ยอดคงเหลือที่ต้องการ
   const url=getUrl();
   if(url){
     const form=new FormData();
