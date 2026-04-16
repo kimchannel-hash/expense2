@@ -947,15 +947,33 @@ function saveHistEdit(){
   const h=getAcctHistory();
   const idx=h.findIndex(i=>String(i.id)===String(id));
   if(idx>=0){
+    const oldItem=h[idx];
+    const oldAmt=oldItem.amount||0;
+    const acctName=oldItem.acct;
+    // อัปเดตยอดบัญชีใน local: คืนยอดเก่า บวกยอดใหม่
+    if(oldItem.type==='เพิ่มเงิน'){
+      const a=getAcctLocal();
+      a[acctName]=(a[acctName]||0)-oldAmt+amt;
+      setAcctLocal(a);
+      updateBalanceDisplay();
+    }
     h[idx].amount=amt;
     h[idx].note=note;
     if(dateVal){
-      // แปลง date input (local) กลับเป็น ISO โดยใช้ timezone ไทย
+      // ใช้ toLocalISO เพื่อ avoid timezone issues
       const parts=dateVal.split('-');
-      const newDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]),12,0,0);
-      h[idx].date=newDate.toISOString();
+      h[idx].date=parts[0]+'-'+parts[1]+'-'+parts[2]+'T12:00:00';
+      h[idx].day=parseInt(parts[2]);
     }
     localStorage.setItem('acct_history',JSON.stringify(h));
+    // sync ไป Sheets
+    const url=getUrl();
+    if(url){
+      const updatedItem={...h[idx]};
+      const form=new FormData();
+      form.append('payload',JSON.stringify({action:'editAcctHistory',item:updatedItem,oldAmount:oldAmt}));
+      fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
+    }
   }
   closeModal('modal-hist-edit');
   renderAcctHistory();showToast('แก้ไขประวัติแล้ว ✓','g');
