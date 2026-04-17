@@ -485,7 +485,7 @@ function renderSetup(){
   document.getElementById('setup-form').style.display=url?'none':'block';
   updateSyncStatus();
 }
-function disconnect(){customConfirm('ยกเลิกการเชื่อมต่อ Sheets?','ยกเลิกการเชื่อมต่อ','ยืนยัน').then(ok=>{if(!ok)return;{localStorage.removeItem('gas_url_v2');renderSetup();updateSyncStatus();}}
+function disconnect(){if(localStorage.getItem('gas_url_v2')){localStorage.removeItem('gas_url_v2');renderSetup();updateSyncStatus();}}
 async function saveUrl(){
   const url=document.getElementById('script-url').value.trim();
   if(!url||!url.startsWith('https://script.google.com')){showToast('URL ไม่ถูกต้อง','r');return;}
@@ -573,12 +573,6 @@ function saveEntry(){
 }
 
 // ACCOUNT
-function formatMoneyInput(el){
-  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
-  const parts=raw.split('.');
-  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
-  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
-}
 
 function formatMoneyInput(el){
   let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
@@ -887,33 +881,6 @@ function renderAcctHistory(){
     </div>`;
   });
   el.innerHTML=html;
-}
-
-
-
-
-function deleteAcctHistory(id){
-  // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
-  const item=getAcctHistory().find(i=>String(i.id)===String(id));
-  const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
-  localStorage.setItem('acct_history',JSON.stringify(h));
-  // คืนยอดบัญชีใน local
-  if(item){
-    const a=getAcctLocal();
-    if(item.type==='เพิ่มเงิน'){
-      // ลดยอดเงินเติม = ลดยอดคงเหลือ
-      a[item.acct]=(a[item.acct]||0)-item.amount;
-    }
-    setAcctLocal(a);updateBalanceDisplay();
-  }
-  renderAcctHistory();showToast('ลบแล้ว','r');
-  // sync ไป Sheets
-  const url=getUrl();
-  if(url){
-    const form=new FormData();
-    form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
-    fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
-  }
 }
 
 
