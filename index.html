@@ -581,6 +581,52 @@ function formatMoneyInput(el){
   el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
 }
 
+function backupCSV(){
+  const entries=getEntries();
+  if(!entries.length){showToast('ไม่มีข้อมูล','a');return;}
+  const header=['id','วันที่','เวลา','หมวด','ช่องทาง','บัตร','บัญชี','จำนวน','รายละเอียด'];
+  const MTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const rows=entries.map(e=>{
+    const d=new Date(e.date);
+    const ds=d.getDate()+' '+MTHS[d.getMonth()]+' '+(d.getFullYear()+543);
+    const ts=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    return [e.id,ds,ts,e.cat||'',e.pay||'',e.sub||'-',e.acct||'',e.amount||0,e.note||''].join(',');
+  });
+  const csv='\uFEFF'+header.join(',')+'\n'+rows.join('\n');
+  const now=new Date();
+  const fname='backup_'+now.getFullYear()+'_'+String(now.getMonth()+1).padStart(2,'0')+'_'+String(now.getDate()).padStart(2,'0')+'.csv';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fname;a.click();
+  URL.revokeObjectURL(url);
+  showToast('บันทึก '+fname+' แล้ว ✓','g');
+}
+
+function backupCSV(){
+  const entries=getEntries();
+  if(!entries.length){showToast('ไม่มีข้อมูล','a');return;}
+  const header=['id','วันที่','เวลา','หมวด','ช่องทาง','บัตร','บัญชี','จำนวน','รายละเอียด'];
+  const MTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const rows=entries.map(function(e){
+    const d=new Date(e.date);
+    const ds=d.getDate()+' '+MTHS[d.getMonth()]+' '+(d.getFullYear()+543);
+    const ts=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    const note=(e.note||'').replace(/,/g,' ');
+    return [e.id,ds,ts,e.cat||'',e.pay||'',e.sub||'-',e.acct||'',e.amount||0,note].join(',');
+  });
+  const csv='\uFEFF'+header.join(',')+'\n'+rows.join('\n');
+  const now=new Date();
+  const fname='backup_'+now.getFullYear()+'_'+String(now.getMonth()+1).padStart(2,'0')+'_'+String(now.getDate()).padStart(2,'0')+'.csv';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fname;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('บันทึก '+fname+' แล้ว ✓','g');
+}
+
 function selAddAcct(name){
   addAcctSel=name;
   document.getElementById('am-main').className='acct-sel-btn'+(name==='บัญชีหลัก'?' sel-main':'');
