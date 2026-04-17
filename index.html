@@ -246,7 +246,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         <div class="amount-box">
           <span class="amount-curr">฿</span>
           <input class="amount-input" type="text" id="amount" placeholder="0" inputmode="decimal" enterkeyhint="next"
-  oninput="formatAmountInput(this)"
+  oninput="formatMoneyInput(this)"
   onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('note').focus();}">
         </div>
       </div>
@@ -313,7 +313,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         </div>
       </div>
       <!-- BACKUP BOX -->
-      <div id="backup-box" style="margin:0 0 16px 0;">
+      <div style="margin:0 0 16px 0;">
         <div class="setup-box" style="border:1.5px solid rgba(34,201,135,0.3);background:rgba(34,201,135,0.05);">
           <div style="font-size:15px;font-weight:600;color:var(--green);margin-bottom:6px;">💾 สำรองข้อมูล</div>
           <div style="font-size:13px;color:var(--text3);margin-bottom:12px;">บันทึกรายจ่ายทั้งหมดเป็นไฟล์ CSV เก็บไว้ในเครื่อง</div>
@@ -406,6 +406,18 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   </div>
 </div>
 
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-overlay" id="modal-confirm" onclick="if(event.target===this)cancelConfirm()">
+  <div class="modal">
+    <div class="modal-title" id="confirm-title">⚠️ ยืนยันการลบ</div>
+    <div id="confirm-msg" style="font-size:14px;color:var(--text2);margin:8px 0 16px 0;line-height:1.5;">คุณแน่ใจหรือไม่?</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="cancelConfirm()">ยกเลิก</button>
+      <button class="modal-save" id="confirm-ok-btn" onclick="okConfirm()" style="background:var(--red);color:#fff;">ลบ</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
@@ -423,7 +435,6 @@ const LING_CATS=['ค่าเรียนลูก'];
 let selCatVal='',selPayVal='',selSubVal='',addAcctSel='บัญชีหลัก';
 let viewM=new Date().getMonth(),viewY=new Date().getFullYear();
 let filterKey='';
-let accounts={main:0,ling:0};
 
 const now=new Date();
 document.getElementById('today-date').textContent=DAYS[now.getDay()]+' '+now.getDate()+' '+MONTHS[now.getMonth()]+' '+(now.getFullYear()+543);
@@ -702,16 +713,18 @@ async function restoreFromSheets(){
 }
 
 // DELETE & EDIT
-async function deleteEntry(id){
-  const all=getEntries();
-  const entry=all.find(e=>e.id===id);
-  if(entry){
+function deleteEntry(id){
+  const entry=getEntries().find(e=>e.id===id);
+  if(!entry){showToast('ไม่พบรายการ','r');return;}
+  const msg='ลบรายการ "'+entry.note+'" จำนวน ฿'+fmt(entry.amount)+' ?';
+  askConfirm(msg,()=>{
+    const all=getEntries();
     const a=getAcctLocal();a[entry.acct||'บัญชีหลัก']=(a[entry.acct||'บัญชีหลัก']||0)+entry.amount;setAcctLocal(a);
-  }
-  setEntries(all.filter(e=>e.id!==id));
-  updateSyncStatus();updateBalanceDisplay();renderSummary();showToast('ลบแล้ว','r');
-  const url=getUrl();
-  if(url&&entry){const form=new FormData();form.append('payload',JSON.stringify({action:'deleteExpense',id:String(id)}));fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});}
+    setEntries(all.filter(e=>e.id!==id));
+    updateSyncStatus();updateBalanceDisplay();renderSummary();showToast('ลบแล้ว','r');
+    const url=getUrl();
+    if(url){const form=new FormData();form.append('payload',JSON.stringify({action:'deleteExpense',id:String(id)}));fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});}
+  });
 }
 
 function openEdit(id){
@@ -729,6 +742,25 @@ function openEdit(id){
 }
 function toggleEditSub(){const p=document.getElementById('edit-pay').value;document.getElementById('edit-sub-row').style.display=p==='บัตรเครดิต'?'block':'none';}
 function closeModal(id){document.getElementById(id).classList.remove('show');}
+
+// CUSTOM CONFIRM (iOS-friendly, ไม่ใช้ window.confirm)
+let _confirmCallback=null;
+function askConfirm(msg,onOk,title='⚠️ ยืนยันการลบ',okLabel='ลบ'){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  const okBtn=document.getElementById('confirm-ok-btn');
+  okBtn.textContent=okLabel;
+  _confirmCallback=onOk;
+  document.getElementById('modal-confirm').classList.add('show');
+}
+function okConfirm(){
+  document.getElementById('modal-confirm').classList.remove('show');
+  if(_confirmCallback){const cb=_confirmCallback;_confirmCallback=null;cb();}
+}
+function cancelConfirm(){
+  document.getElementById('modal-confirm').classList.remove('show');
+  _confirmCallback=null;
+}
 
 function saveEdit(){
   const id=Number(document.getElementById('edit-id').value);
@@ -886,13 +918,6 @@ function renderAcctHistory(){
 }
 
 
-function formatAmountInput(el){
-  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
-  const parts=raw.split('.');
-  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
-  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
-}
-
 function editAcctHistory(id){
   const h=getAcctHistory();
   const item=h.find(i=>String(i.id)===String(id));
@@ -953,27 +978,28 @@ function saveHistEdit(){
 }
 
 function deleteAcctHistory(id){
-  // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
   const item=getAcctHistory().find(i=>String(i.id)===String(id));
-  const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
-  localStorage.setItem('acct_history',JSON.stringify(h));
-  // คืนยอดบัญชีใน local
-  if(item){
+  if(!item){showToast('ไม่พบรายการ','r');return;}
+  const msg='ลบประวัติ "'+(item.note||item.type||'')+'" จำนวน ฿'+fmt(item.amount)+' ?';
+  askConfirm(msg,()=>{
+    const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
+    localStorage.setItem('acct_history',JSON.stringify(h));
+    // คืนยอดบัญชีใน local
     const a=getAcctLocal();
     if(item.type==='เพิ่มเงิน'){
       // ลดยอดเงินเติม = ลดยอดคงเหลือ
       a[item.acct]=(a[item.acct]||0)-item.amount;
     }
     setAcctLocal(a);updateBalanceDisplay();
-  }
-  renderAcctHistory();showToast('ลบแล้ว','r');
-  // sync ไป Sheets
-  const url=getUrl();
-  if(url){
-    const form=new FormData();
-    form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
-    fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
-  }
+    renderAcctHistory();showToast('ลบแล้ว','r');
+    // sync ไป Sheets
+    const url=getUrl();
+    if(url){
+      const form=new FormData();
+      form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
+      fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
+    }
+  });
 }
 
 selAddAcct('บัญชีหลัก');
