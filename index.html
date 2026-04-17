@@ -579,7 +579,10 @@ function saveEntry(){
   updateSyncStatus();updateBalanceDisplay();
   if(getUrl())syncEntry(entry);
   showToast('บันทึกแล้ว ✓','g');
-  document.getElementById('note').value='';
+  const noteEl=document.getElementById('note');
+  noteEl.value='';
+  noteEl.innerHTML='';
+  noteEl.dispatchEvent(new Event('input'));
 }
 
 // ACCOUNT
