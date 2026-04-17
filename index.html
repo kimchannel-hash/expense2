@@ -656,7 +656,6 @@ async function syncEntry(entry){
 
 async function syncNow(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
-  if(!await customConfirm('ซิงค์ข้อมูลทั้งหมดไปยัง Sheets ทันที?','ซิงค์เดี๋ยวนี้'))return;
   const pending=getEntries().filter(e=>!e.synced);
   if(!pending.length){showToast('ทุกรายการซิงค์แล้ว ✓','g');return;}
   showToast('กำลังซิงค์...','a');
@@ -671,7 +670,6 @@ async function syncNow(){
 
 async function restoreFromSheets(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
-  if(!await customConfirm('ข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลจาก Sheets','กู้คืนข้อมูล','กู้คืน'))return;
   showToast('กำลังดึงข้อมูล...','a');
   try{
     // ใช้ JSONP เพื่อ bypass CORS บน Safari/iPhone
@@ -709,7 +707,6 @@ async function restoreFromSheets(){
 
 // DELETE & EDIT
 async function deleteEntry(id){
-  if(!await customConfirm('ลบรายการนี้?','ลบรายการ','ลบ'))return;
   const all=getEntries();
   const entry=all.find(e=>e.id===id);
   if(entry){
@@ -896,7 +893,6 @@ function renderAcctHistory(){
 
 
 function deleteAcctHistory(id){
-  if(!await customConfirm('ลบประวัติรายการนี้?','ลบ','ลบ'))return;
   // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
   const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
@@ -988,7 +984,6 @@ function saveHistEdit(){
 }
 
 function deleteAcctHistory(id){
-  if(!await customConfirm('ลบประวัติรายการนี้?','ลบ','ลบ'))return;
   // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
   const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
