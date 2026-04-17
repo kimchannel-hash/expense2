@@ -312,6 +312,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
           <button class="setup-btn" onclick="restoreFromSheets()" style="background:var(--amber);color:#1a0f00;">🔄 กู้คืนข้อมูลจาก Sheets</button>
         </div>
       </div>
+      <!-- BACKUP BOX -->
+      <div id="backup-box" style="margin:0 0 16px 0;">
+        <div class="setup-box" style="border:1.5px solid rgba(34,201,135,0.3);background:rgba(34,201,135,0.05);">
+          <div style="font-size:15px;font-weight:600;color:var(--green);margin-bottom:6px;">💾 สำรองข้อมูล</div>
+          <div style="font-size:13px;color:var(--text3);margin-bottom:12px;">บันทึกรายจ่ายทั้งหมดเป็นไฟล์ CSV เก็บไว้ในเครื่อง</div>
+          <button class="setup-btn" onclick="backupCSV()" style="background:#22c987;color:#000;width:100%;">💾 บันทึก CSV สำรองข้อมูล</button>
+        </div>
+      </div>
+
       <div id="setup-form">
         <div class="setup-box">
           <div class="setup-title">เชื่อมต่อ Google Sheets</div>
@@ -581,27 +590,6 @@ function formatMoneyInput(el){
   el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
 }
 
-function backupCSV(){
-  const entries=getEntries();
-  if(!entries.length){showToast('ไม่มีข้อมูล','a');return;}
-  const header=['id','วันที่','เวลา','หมวด','ช่องทาง','บัตร','บัญชี','จำนวน','รายละเอียด'];
-  const MTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  const rows=entries.map(e=>{
-    const d=new Date(e.date);
-    const ds=d.getDate()+' '+MTHS[d.getMonth()]+' '+(d.getFullYear()+543);
-    const ts=d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-    return [e.id,ds,ts,e.cat||'',e.pay||'',e.sub||'-',e.acct||'',e.amount||0,e.note||''].join(',');
-  });
-  const csv='\uFEFF'+header.join(',')+'\n'+rows.join('\n');
-  const now=new Date();
-  const fname='backup_'+now.getFullYear()+'_'+String(now.getMonth()+1).padStart(2,'0')+'_'+String(now.getDate()).padStart(2,'0')+'.csv';
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=fname;a.click();
-  URL.revokeObjectURL(url);
-  showToast('บันทึก '+fname+' แล้ว ✓','g');
-}
 
 function backupCSV(){
   const entries=getEntries();
