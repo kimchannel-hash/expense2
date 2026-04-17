@@ -573,10 +573,7 @@ function saveEntry(){
 }
 
 // ACCOUNT
-function formatMoneyInput(el){
-  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
-  const parts=raw.split('.');
-  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
+)+(?!\d))/g,'$1,');
   el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
 }
 
@@ -887,33 +884,6 @@ function renderAcctHistory(){
     </div>`;
   });
   el.innerHTML=html;
-}
-
-
-
-
-function deleteAcctHistory(id){
-  // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
-  const item=getAcctHistory().find(i=>String(i.id)===String(id));
-  const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
-  localStorage.setItem('acct_history',JSON.stringify(h));
-  // คืนยอดบัญชีใน local
-  if(item){
-    const a=getAcctLocal();
-    if(item.type==='เพิ่มเงิน'){
-      // ลดยอดเงินเติม = ลดยอดคงเหลือ
-      a[item.acct]=(a[item.acct]||0)-item.amount;
-    }
-    setAcctLocal(a);updateBalanceDisplay();
-  }
-  renderAcctHistory();showToast('ลบแล้ว','r');
-  // sync ไป Sheets
-  const url=getUrl();
-  if(url){
-    const form=new FormData();
-    form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
-    fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
-  }
 }
 
 
