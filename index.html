@@ -622,6 +622,12 @@ const CAT_META={
   'ท่องเที่ยว':{key:'travel',color:'#38bdf8',bg:'rgba(56,189,248,0.15)'},
   'อื่นๆ':{key:'other',color:'#94a3b8',bg:'rgba(148,163,184,0.15)'}
 };
+// Migration: แปลงชื่อหมวดเก่า → ใหม่ (รายการเก่าที่ยัง sync จาก Sheets ไม่ครบ)
+const CAT_MIGRATE={
+  'น้ำ ไฟ เน็ต Netflix':'น้ำ ไฟ เน็ต',
+  'น้ำ ไฟ เน็ต แม่บ้าน':'น้ำ ไฟ เน็ต'
+};
+function migrateCat(c){return CAT_MIGRATE[c]||c;}
 const LING_CATS=['ค่าเรียนลูก'];
 
 let selCatVal='',selPayVal='',selSubVal='',addAcctSel='บัญชีหลัก';
@@ -885,7 +891,7 @@ async function restoreFromSheets(){
       if(json.entries){
         const restored=json.entries.map(e=>{
           const d=new Date(e.isoDate||new Date().toISOString());
-          return{id:Number(e.id),cat:e.cat,pay:e.pay,sub:(e.sub&&e.sub!=='-')?e.sub:'',acct:e.acct||'บัญชีหลัก',amount:parseFloat(e.amount)||0,note:e.note||'',date:d.toISOString(),d:d.getDate(),m:d.getMonth(),y:d.getFullYear(),synced:true};
+          return{id:Number(e.id),cat:migrateCat(e.cat),pay:e.pay,sub:(e.sub&&e.sub!=='-')?e.sub:'',acct:e.acct||'บัญชีหลัก',amount:parseFloat(e.amount)||0,note:e.note||'',date:d.toISOString(),d:d.getDate(),m:d.getMonth(),y:d.getFullYear(),synced:true};
         });
         setEntries(restored);
       }
@@ -1033,7 +1039,7 @@ function renderSummary(){
     html+=`</div>`;
   }
   html+=`<div class="divider"></div>`;
-  const cats={};shown.forEach(e=>{if(!cats[e.cat])cats[e.cat]=[];cats[e.cat].push(e);});
+  const cats={};shown.forEach(e=>{const c=migrateCat(e.cat);if(!cats[c])cats[c]=[];cats[c].push(e);});
   if(!shown.length)html+=`<div class="empty-state">ไม่มีรายการในหมวดนี้</div>`;
   Object.entries(cats).forEach(([cat,items])=>{
     const m=CAT_META[cat]||CAT_META['อื่นๆ'];
@@ -1193,6 +1199,13 @@ function deleteAcctHistory(id){
   });
 }
 
+// One-time migration ของ entries เก่าใน localStorage
+(function(){
+  const all=getEntries();
+  let changed=false;
+  all.forEach(e=>{const m=migrateCat(e.cat);if(m!==e.cat){e.cat=m;changed=true;}});
+  if(changed)setEntries(all);
+})();
 selAddAcct('บัญชีหลัก');
 updateSyncStatus();updateBalanceDisplay();renderSummary();
 </script>
