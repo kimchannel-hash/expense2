@@ -68,6 +68,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .cat-chip[data-th="travel"]{background:linear-gradient(135deg,rgba(56,189,248,0.15),rgba(20,184,166,0.05));border-color:rgba(56,189,248,0.3);}
 .cat-chip[data-th="other"]{background:linear-gradient(135deg,rgba(148,163,184,0.15),rgba(100,116,139,0.05));border-color:rgba(148,163,184,0.3);}
 .cat-chip[data-th="school"]{background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(22,163,74,0.05));border-color:rgba(34,197,94,0.3);}
+.cat-chip[data-th="car"]{background:linear-gradient(135deg,rgba(20,184,166,0.15),rgba(13,148,136,0.05));border-color:rgba(20,184,166,0.3);}
 
 /* Background decoration icon — large, faded */
 .cat-bg-deco{position:absolute;right:-10px;bottom:-10px;width:64px;height:64px;opacity:0.18;pointer-events:none;}
@@ -78,6 +79,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .cat-chip[data-th="travel"] .cat-bg-deco{color:#38bdf8;}
 .cat-chip[data-th="other"] .cat-bg-deco{color:#94a3b8;}
 .cat-chip[data-th="school"] .cat-bg-deco{color:#22c55e;}
+.cat-chip[data-th="car"] .cat-bg-deco{color:#14b8a6;}
 
 /* BUMPED — กดเลือกแล้วบุ๋มค้าง */
 .cat-chip.sel-cat{
@@ -95,6 +97,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .cat-chip[data-th="travel"].sel-cat{border-color:#7dd3fc !important;background:linear-gradient(135deg,rgba(56,189,248,0.3),rgba(20,184,166,0.1)) !important;}
 .cat-chip[data-th="other"].sel-cat{border-color:#e2e8f0 !important;background:linear-gradient(135deg,rgba(148,163,184,0.3),rgba(100,116,139,0.1)) !important;}
 .cat-chip[data-th="school"].sel-cat{border-color:#86efac !important;background:linear-gradient(135deg,rgba(34,197,94,0.3),rgba(22,163,74,0.1)) !important;}
+.cat-chip[data-th="car"].sel-cat{border-color:#5eead4 !important;background:linear-gradient(135deg,rgba(20,184,166,0.3),rgba(13,148,136,0.1)) !important;}
 
 .cat-icon-wrap{flex-shrink:0;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;position:relative;z-index:1;}
 .cat-chip[data-th="food"] .cat-icon-wrap{background:rgba(251,146,60,0.25);}
@@ -104,6 +107,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .cat-chip[data-th="travel"] .cat-icon-wrap{background:rgba(56,189,248,0.25);}
 .cat-chip[data-th="other"] .cat-icon-wrap{background:rgba(148,163,184,0.25);}
 .cat-chip[data-th="school"] .cat-icon-wrap{background:rgba(34,197,94,0.25);}
+.cat-chip[data-th="car"] .cat-icon-wrap{background:rgba(20,184,166,0.25);}
 
 .cat-icon-svg{width:24px;height:24px;stroke:#fff;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 .cat-name{font-size:14px;font-weight:800;color:#fff;line-height:1.2;position:relative;z-index:1;}
@@ -321,9 +325,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <div class="field-label">หมวดค่าใช้จ่าย</div>
         <div class="cat-grid">
           <div class="cat-chip" data-th="food" onclick="selCat(this,'ค่าอาหาร')">
-            <div class="cat-icon-wrap"><svg viewBox="0 0 24 24" class="cat-icon-svg"><path d="M3 11h18l-2 9H5z"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+            <div class="cat-icon-wrap"><svg viewBox="0 0 24 24" class="cat-icon-svg"><path d="M3 13h18a9 9 0 01-18 0z"/><path d="M2 13h20"/><path d="M8 9c.7-1 1.5-1 2 0s1.3 1 2 0 1.5-1 2 0 1.3 1 2 0"/><path d="M9 5c-.5-1 0-2 .5-2.5M13 5c-.5-1 0-2 .5-2.5"/></svg></div>
             <div class="cat-name">ค่าอาหาร</div>
-            <svg class="cat-bg-deco" viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="36" r="22" opacity="0.4"/><path d="M14 32h36l-4 18H18z" opacity="0.6"/><path d="M22 18h20l-2 6H24z" opacity="0.5"/></svg>
+            <svg class="cat-bg-deco" viewBox="0 0 64 64" fill="currentColor"><path d="M6 36h52a26 26 0 01-52 0z" opacity="0.6"/><path d="M4 36h56" stroke="currentColor" stroke-width="3" fill="none" opacity="0.4"/><path d="M18 28c2-3 4-3 6 0s4 3 6 0 4-3 6 0 4 3 6 0" stroke="currentColor" stroke-width="3" fill="none" opacity="0.4"/></svg>
           </div>
           <div class="cat-chip" data-th="shop" onclick="selCat(this,'ซื้อของ')">
             <div class="cat-icon-wrap"><svg viewBox="0 0 24 24" class="cat-icon-svg"><path d="M5 8h15l-2 12H7z"/><path d="M9 8V5a3 3 0 016 0v3"/></svg></div>
@@ -335,10 +339,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
             <div class="cat-name">หลิงหลิง</div>
             <svg class="cat-bg-deco" viewBox="0 0 64 64" fill="currentColor"><path d="M32 56s-22-14-22-30a12 12 0 0122-7 12 12 0 0122 7c0 16-22 30-22 30z" opacity="0.6"/></svg>
           </div>
-          <div class="cat-chip" data-th="util" onclick="selCat(this,'น้ำ ไฟ เน็ต Netflix')">
+          <div class="cat-chip" data-th="util" onclick="selCat(this,'น้ำ ไฟ เน็ต')">
             <div class="cat-icon-wrap"><svg viewBox="0 0 24 24" class="cat-icon-svg"><path d="M13 3l-7 11h5l-1 7 7-11h-5z"/></svg></div>
             <div class="cat-name">น้ำ ไฟ เน็ต</div>
             <svg class="cat-bg-deco" viewBox="0 0 64 64" fill="currentColor"><path d="M36 4l-22 34h16l-4 22 22-34H32z" opacity="0.6"/></svg>
+          </div>
+          <div class="cat-chip" data-th="car" onclick="selCat(this,'ค่าเดินทาง')">
+            <div class="cat-icon-wrap"><svg viewBox="0 0 24 24" class="cat-icon-svg"><path d="M3 13l2-5a2 2 0 012-1.5h10a2 2 0 012 1.5l2 5"/><path d="M3 13h18v5a1 1 0 01-1 1h-2a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16" r="1.2"/><circle cx="16.5" cy="16" r="1.2"/></svg></div>
+            <div class="cat-name">ค่าเดินทาง</div>
+            <svg class="cat-bg-deco" viewBox="0 0 64 64" fill="currentColor"><path d="M8 36l5-13a5 5 0 015-4h26a5 5 0 015 4l5 13" opacity="0.6"/><path d="M8 36h48v14a3 3 0 01-3 3h-5a3 3 0 01-3-3v-3H19v3a3 3 0 01-3 3h-5a3 3 0 01-3-3z" opacity="0.5"/></svg>
           </div>
           <div class="cat-chip" data-th="travel" onclick="selCat(this,'ท่องเที่ยว')">
             <div class="cat-icon-wrap"><svg viewBox="0 0 24 24" class="cat-icon-svg"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div>
@@ -519,10 +528,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <option value="ค่าอาหาร">🍜 ค่าอาหาร</option>
         <option value="ซื้อของ">🛍️ ซื้อของ</option>
         <option value="หลิงหลิง">🎀 หลิงหลิง</option>
-        <option value="ค่าเรียนลูก">🏫 ค่าเรียนลูก</option>
-        <option value="น้ำ ไฟ เน็ต Netflix">⚡️ น้ำ ไฟ เน็ต Netflix</option>
+        <option value="น้ำ ไฟ เน็ต">⚡️ น้ำ ไฟ เน็ต</option>
+        <option value="ค่าเดินทาง">🚗 ค่าเดินทาง</option>
         <option value="ท่องเที่ยว">✈️ ท่องเที่ยว</option>
         <option value="อื่นๆ">🌀 อื่นๆ</option>
+        <option value="ค่าเรียนลูก">🏫 ค่าเรียนลูก</option>
       </select>
     </div>
     <div class="modal-row"><div class="modal-lbl">ช่องทางชำระ</div>
@@ -578,13 +588,14 @@ const MONTHS=['มกราคม','กุมภาพันธ์','มีน�
 const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 // SVG icon paths (matching cat chips) + theme color
 const ICONS={
-  food:'<path d="M3 11h18l-2 9H5z"/><path d="M8 11V7a4 4 0 018 0v4"/>',
+  food:'<path d="M3 13h18a9 9 0 01-18 0z"/><path d="M2 13h20"/><path d="M8 9c.7-1 1.5-1 2 0s1.3 1 2 0 1.5-1 2 0 1.3 1 2 0"/><path d="M9 5c-.5-1 0-2 .5-2.5M13 5c-.5-1 0-2 .5-2.5"/>',
   shop:'<path d="M5 8h15l-2 12H7z"/><path d="M9 8V5a3 3 0 016 0v3"/>',
   ling:'<path d="M12 21s-7-5-7-11a4 4 0 017-2.5A4 4 0 0119 10c0 6-7 11-7 11z"/>',
   util:'<path d="M13 3l-7 11h5l-1 7 7-11h-5z"/>',
   travel:'<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
   other:'<circle cx="12" cy="12" r="9"/><path d="M9 9.5a3 3 0 015.66 1.5c0 2-3 2.5-3 4.5"/><circle cx="12" cy="18" r="0.5" fill="currentColor" stroke="none"/>',
   school:'<path d="M3 10l9-5 9 5-9 5z"/><path d="M7 12v5a5 3 0 0010 0v-5"/>',
+  car:'<path d="M3 13l2-5a2 2 0 012-1.5h10a2 2 0 012 1.5l2 5"/><path d="M3 13h18v5a1 1 0 01-1 1h-2a1 1 0 01-1-1v-1H7v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16" r="1.2"/><circle cx="16.5" cy="16" r="1.2"/>',
   cash:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
   bank:'<path d="M3 10h18L12 3z"/><path d="M5 10v8M9 10v8M15 10v8M19 10v8"/><path d="M3 21h18"/>',
   card:'<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h3"/>',
@@ -606,7 +617,8 @@ const CAT_META={
   'ซื้อของ':{key:'shop',color:'#a78bfa',bg:'rgba(167,139,250,0.15)'},
   'หลิงหลิง':{key:'ling',color:'#ec4899',bg:'rgba(236,72,153,0.15)'},
   'ค่าเรียนลูก':{key:'school',color:'#22c55e',bg:'rgba(34,197,94,0.15)'},
-  'น้ำ ไฟ เน็ต Netflix':{key:'util',color:'#facc15',bg:'rgba(250,204,21,0.15)'},
+  'น้ำ ไฟ เน็ต':{key:'util',color:'#facc15',bg:'rgba(250,204,21,0.15)'},
+  'ค่าเดินทาง':{key:'car',color:'#14b8a6',bg:'rgba(20,184,166,0.15)'},
   'ท่องเที่ยว':{key:'travel',color:'#38bdf8',bg:'rgba(56,189,248,0.15)'},
   'อื่นๆ':{key:'other',color:'#94a3b8',bg:'rgba(148,163,184,0.15)'}
 };
