@@ -485,7 +485,7 @@ function renderSetup(){
   document.getElementById('setup-form').style.display=url?'none':'block';
   updateSyncStatus();
 }
-function disconnect(){if(confirm('ยืนยันยกเลิก?')){localStorage.removeItem('gas_url_v2');renderSetup();updateSyncStatus();}}
+function disconnect(){customConfirm('ยกเลิกการเชื่อมต่อ Sheets?','ยกเลิกการเชื่อมต่อ','ยืนยัน').then(ok=>{if(!ok)return;{localStorage.removeItem('gas_url_v2');renderSetup();updateSyncStatus();}}
 async function saveUrl(){
   const url=document.getElementById('script-url').value.trim();
   if(!url||!url.startsWith('https://script.google.com')){showToast('URL ไม่ถูกต้อง','r');return;}
@@ -517,14 +517,22 @@ function selSub(el,val){document.querySelectorAll('.sub-chip').forEach(c=>c.clas
 
 // SAVE ENTRY
 // แปลงเวลา local เป็น ISO-like string โดยไม่เปลี่ยน timezone
-function toLocalISO(d){
-  const y=d.getFullYear();
-  const mo=String(d.getMonth()+1).padStart(2,'0');
-  const day=String(d.getDate()).padStart(2,'0');
-  const h=String(d.getHours()).padStart(2,'0');
-  const mi=String(d.getMinutes()).padStart(2,'0');
-  const s=String(d.getSeconds()).padStart(2,'0');
-  return y+'-'+mo+'-'+day+'T'+h+':'+mi+':'+s;
+// Custom confirm สำหรับ iOS ที่บล็อก window.confirm()
+let _confirmResolve = null;
+function customConfirm(msg, title='ยืนยัน', okLabel='ตกลง', okClass='') {
+  return new Promise(resolve => {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = msg;
+    const okBtn = document.getElementById('confirm-ok-btn');
+    okBtn.textContent = okLabel;
+    okBtn.className = 'modal-save' + (okClass ? ' ' + okClass : '');
+    document.getElementById('modal-confirm').classList.add('show');
+    _confirmResolve = (val) => {
+      document.getElementById('modal-confirm').classList.remove('show');
+      _confirmResolve = null;
+      resolve(val);
+    };
+  });
 }
 
 function toLocalISO(d){
@@ -648,7 +656,7 @@ async function syncEntry(entry){
 
 async function syncNow(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
-  if(!confirm('ซิงค์ข้อมูลไปยัง Sheets ทันที?'))return;
+  if(!await customConfirm('ซิงค์ข้อมูลทั้งหมดไปยัง Sheets ทันที?','ซิงค์เดี๋ยวนี้'))return;
   const pending=getEntries().filter(e=>!e.synced);
   if(!pending.length){showToast('ทุกรายการซิงค์แล้ว ✓','g');return;}
   showToast('กำลังซิงค์...','a');
@@ -663,7 +671,7 @@ async function syncNow(){
 
 async function restoreFromSheets(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
-  if(!confirm('กู้คืนข้อมูลจาก Sheets?\nข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลจาก Sheets'))return;
+  if(!await customConfirm('ข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลจาก Sheets','กู้คืนข้อมูล','กู้คืน'))return;
   showToast('กำลังดึงข้อมูล...','a');
   try{
     // ใช้ JSONP เพื่อ bypass CORS บน Safari/iPhone
@@ -700,8 +708,8 @@ async function restoreFromSheets(){
 }
 
 // DELETE & EDIT
-function deleteEntry(id){
-  if(!confirm('ลบรายการนี้?'))return;
+async function deleteEntry(id){
+  if(!await customConfirm('ลบรายการนี้?','ลบรายการ','ลบ'))return;
   const all=getEntries();
   const entry=all.find(e=>e.id===id);
   if(entry){
@@ -888,7 +896,7 @@ function renderAcctHistory(){
 
 
 function deleteAcctHistory(id){
-  if(!confirm('ลบรายการนี้?'))return;
+  if(!await customConfirm('ลบประวัติรายการนี้?','ลบ','ลบ'))return;
   // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
   const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
@@ -980,7 +988,7 @@ function saveHistEdit(){
 }
 
 function deleteAcctHistory(id){
-  if(!confirm('ลบรายการนี้?'))return;
+  if(!await customConfirm('ลบประวัติรายการนี้?','ลบ','ลบ'))return;
   // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
   const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
