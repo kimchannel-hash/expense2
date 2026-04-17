@@ -564,12 +564,15 @@ function saveEntry(){
   if(!noteVal){showToast('ใส่รายละเอียดก่อนนะ','a');document.getElementById('note').focus();return;}
   const n=new Date();
   const acctName=LING_CATS.includes(selCatVal)?'บัญชีหลิงหลิง':'บัญชีหลัก';
-  const entry={id:Date.now(),cat:selCatVal,pay:selPayVal,sub:selSubVal,acct:acctName,amount:amt,note:noteVal,date:n.toISOString(),d:n.getDate(),m:n.getMonth(),y:n.getFullYear(),synced:false};
+  const entry={id:Date.now(),cat:selCatVal,pay:selPayVal,sub:selSubVal,acct:acctName,amount:amt,note:noteVal,date:toLocalISO(n),d:n.getDate(),m:n.getMonth(),y:n.getFullYear(),synced:false};
   const all=getEntries();all.push(entry);setEntries(all);
   // deduct from local balance
   const a=getAcctLocal();a[acctName]=(a[acctName]||0)-amt;setAcctLocal(a);
-  // reset
-  document.getElementById('amount').value='';document.getElementById('amount-display').style.display='none';document.getElementById('note').value='';
+  // reset fields
+  document.getElementById('amount').value='';
+  const amtDisplay = document.getElementById('amount-display');
+  if(amtDisplay) amtDisplay.style.display='none';
+  document.getElementById('note').value='';
   document.querySelectorAll('.cat-chip').forEach(c=>{c.classList.remove('sel-cat');c.style.background='';c.style.borderColor='';c.style.boxShadow='';c.querySelector('.cat-name').style.color='';});
   document.querySelectorAll('.pay-chip').forEach(c=>c.className='pay-chip');
   document.querySelectorAll('.sub-chip').forEach(c=>c.classList.remove('sel'));
@@ -579,10 +582,6 @@ function saveEntry(){
   updateSyncStatus();updateBalanceDisplay();
   if(getUrl())syncEntry(entry);
   showToast('บันทึกแล้ว ✓','g');
-  const noteEl=document.getElementById('note');
-  noteEl.value='';
-  noteEl.innerHTML='';
-  noteEl.dispatchEvent(new Event('input'));
 }
 
 // ACCOUNT
