@@ -354,21 +354,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   </div>
 </div>
 
-<!-- EDIT ACCT HISTORY MODAL -->
-<div class="modal-overlay" id="modal-hist-edit" onclick="if(event.target===this)closeModal('modal-hist-edit')">
-  <div class="modal">
-    <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
-    <input type="hidden" id="hist-edit-id">
-    <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
-    <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
-      <button class="modal-save" onclick="saveHistEdit()">บันทึก</button>
-    </div>
-  </div>
-</div>
-
 <!-- EDIT EXPENSE MODAL -->
 <div class="modal-overlay" id="modal-edit" onclick="if(event.target===this)closeModal('modal-edit')">
   <div class="modal">
@@ -526,24 +511,6 @@ function selSub(el,val){document.querySelectorAll('.sub-chip').forEach(c=>c.clas
 
 // SAVE ENTRY
 // แปลงเวลา local เป็น ISO-like string โดยไม่เปลี่ยน timezone
-// Custom confirm สำหรับ iOS ที่บล็อก window.confirm()
-let _confirmResolve = null;
-function customConfirm(msg, title='ยืนยัน', okLabel='ตกลง', okClass='') {
-  return new Promise(resolve => {
-    document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-msg').textContent = msg;
-    const okBtn = document.getElementById('confirm-ok-btn');
-    okBtn.textContent = okLabel;
-    okBtn.className = 'modal-save' + (okClass ? ' ' + okClass : '');
-    document.getElementById('modal-confirm').classList.add('show');
-    _confirmResolve = (val) => {
-      document.getElementById('modal-confirm').classList.remove('show');
-      _confirmResolve = null;
-      resolve(val);
-    };
-  });
-}
-
 function toLocalISO(d){
   const y=d.getFullYear();
   const mo=String(d.getMonth()+1).padStart(2,'0');
@@ -570,8 +537,6 @@ function saveEntry(){
   const a=getAcctLocal();a[acctName]=(a[acctName]||0)-amt;setAcctLocal(a);
   // reset fields
   document.getElementById('amount').value='';
-  const amtDisplay = document.getElementById('amount-display');
-  if(amtDisplay) amtDisplay.style.display='none';
   document.getElementById('note').value='';
   document.querySelectorAll('.cat-chip').forEach(c=>{c.classList.remove('sel-cat');c.style.background='';c.style.borderColor='';c.style.boxShadow='';c.querySelector('.cat-name').style.color='';});
   document.querySelectorAll('.pay-chip').forEach(c=>c.className='pay-chip');
