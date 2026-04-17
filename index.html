@@ -336,7 +336,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
     <input type="hidden" id="hist-edit-id">
     <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="number" inputmode="decimal"></div>
     <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
@@ -351,7 +351,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <div class="modal-title">✏️ แก้ไขประวัติบัญชี</div>
     <input type="hidden" id="hist-edit-id">
     <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="hist-edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="hist-edit-amount" type="number" inputmode="decimal"></div>
     <div class="modal-row"><div class="modal-lbl">หมายเหตุ</div><input class="modal-input" id="hist-edit-note" type="text"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-hist-edit')">ยกเลิก</button>
@@ -390,7 +390,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
       </select>
     </div>
     <div class="modal-row"><div class="modal-lbl">วันที่</div><input class="modal-input" id="edit-date" type="date"></div>
-    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="edit-amount" type="text" inputmode="decimal" oninput="formatMoneyInput(this)"></div>
+    <div class="modal-row"><div class="modal-lbl">จำนวนเงิน (บาท)</div><input class="modal-input" id="edit-amount" type="number" inputmode="decimal"></div>
     <div class="modal-row"><div class="modal-lbl">รายละเอียด</div><input class="modal-input" id="edit-note" type="text"></div>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal('modal-edit')">ยกเลิก</button>
@@ -485,7 +485,7 @@ function renderSetup(){
   document.getElementById('setup-form').style.display=url?'none':'block';
   updateSyncStatus();
 }
-function disconnect(){customConfirm('ยกเลิกการเชื่อมต่อ Sheets?','ยกเลิกการเชื่อมต่อ','ยืนยัน').then(ok=>{if(!ok)return;{localStorage.removeItem('gas_url_v2');renderSetup();updateSyncStatus();}}
+function disconnect(){if(confirm('ยืนยันยกเลิก?')){localStorage.removeItem('gas_url_v2');renderSetup();updateSyncStatus();}}
 async function saveUrl(){
   const url=document.getElementById('script-url').value.trim();
   if(!url||!url.startsWith('https://script.google.com')){showToast('URL ไม่ถูกต้อง','r');return;}
@@ -517,22 +517,14 @@ function selSub(el,val){document.querySelectorAll('.sub-chip').forEach(c=>c.clas
 
 // SAVE ENTRY
 // แปลงเวลา local เป็น ISO-like string โดยไม่เปลี่ยน timezone
-// Custom confirm สำหรับ iOS ที่บล็อก window.confirm()
-let _confirmResolve = null;
-function customConfirm(msg, title='ยืนยัน', okLabel='ตกลง', okClass='') {
-  return new Promise(resolve => {
-    document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-msg').textContent = msg;
-    const okBtn = document.getElementById('confirm-ok-btn');
-    okBtn.textContent = okLabel;
-    okBtn.className = 'modal-save' + (okClass ? ' ' + okClass : '');
-    document.getElementById('modal-confirm').classList.add('show');
-    _confirmResolve = (val) => {
-      document.getElementById('modal-confirm').classList.remove('show');
-      _confirmResolve = null;
-      resolve(val);
-    };
-  });
+function toLocalISO(d){
+  const y=d.getFullYear();
+  const mo=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  const h=String(d.getHours()).padStart(2,'0');
+  const mi=String(d.getMinutes()).padStart(2,'0');
+  const s=String(d.getSeconds()).padStart(2,'0');
+  return y+'-'+mo+'-'+day+'T'+h+':'+mi+':'+s;
 }
 
 function toLocalISO(d){
@@ -573,7 +565,10 @@ function saveEntry(){
 }
 
 // ACCOUNT
-)+(?!\d))/g,'$1,');
+function formatMoneyInput(el){
+  let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
+  const parts=raw.split('.');
+  parts[0]=parts[0].replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,');
   el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
 }
 
@@ -653,6 +648,7 @@ async function syncEntry(entry){
 
 async function syncNow(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
+  if(!confirm('ซิงค์ข้อมูลไปยัง Sheets ทันที?'))return;
   const pending=getEntries().filter(e=>!e.synced);
   if(!pending.length){showToast('ทุกรายการซิงค์แล้ว ✓','g');return;}
   showToast('กำลังซิงค์...','a');
@@ -667,6 +663,7 @@ async function syncNow(){
 
 async function restoreFromSheets(){
   const url=getUrl();if(!url){showToast('ยังไม่ได้เชื่อมต่อ','a');return;}
+  if(!confirm('กู้คืนข้อมูลจาก Sheets?\nข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลจาก Sheets'))return;
   showToast('กำลังดึงข้อมูล...','a');
   try{
     // ใช้ JSONP เพื่อ bypass CORS บน Safari/iPhone
@@ -703,7 +700,8 @@ async function restoreFromSheets(){
 }
 
 // DELETE & EDIT
-async function deleteEntry(id){
+function deleteEntry(id){
+  if(!confirm('ลบรายการนี้?'))return;
   const all=getEntries();
   const entry=all.find(e=>e.id===id);
   if(entry){
@@ -736,7 +734,7 @@ function saveEdit(){
   const cat=document.getElementById('edit-cat').value;
   const pay=document.getElementById('edit-pay').value;
   const sub=pay==='บัตรเครดิต'?document.getElementById('edit-sub').value:'';
-  const amt=parseFloat(document.getElementById('edit-amount').value.replace(/,/g,''));
+  const amt=parseFloat(document.getElementById('edit-amount').value);
   const note=document.getElementById('edit-note').value.trim();
   const dateVal=document.getElementById('edit-date').value;
   if(!amt||amt<=0){showToast('ใส่จำนวนเงิน','a');return;}
@@ -887,6 +885,34 @@ function renderAcctHistory(){
 }
 
 
+
+
+function deleteAcctHistory(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
+  const item=getAcctHistory().find(i=>String(i.id)===String(id));
+  const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
+  localStorage.setItem('acct_history',JSON.stringify(h));
+  // คืนยอดบัญชีใน local
+  if(item){
+    const a=getAcctLocal();
+    if(item.type==='เพิ่มเงิน'){
+      // ลดยอดเงินเติม = ลดยอดคงเหลือ
+      a[item.acct]=(a[item.acct]||0)-item.amount;
+    }
+    setAcctLocal(a);updateBalanceDisplay();
+  }
+  renderAcctHistory();showToast('ลบแล้ว','r');
+  // sync ไป Sheets
+  const url=getUrl();
+  if(url){
+    const form=new FormData();
+    form.append('payload',JSON.stringify({action:'deleteAcctHistory',id:String(id)}));
+    fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
+  }
+}
+
+
 function formatAmountInput(el){
   let raw=el.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
   const parts=raw.split('.');
@@ -921,39 +947,22 @@ function saveHistEdit(){
   const h=getAcctHistory();
   const idx=h.findIndex(i=>String(i.id)===String(id));
   if(idx>=0){
-    const oldItem=h[idx];
-    const oldAmt=oldItem.amount||0;
-    const acctName=oldItem.acct;
-    // อัปเดตยอดบัญชีใน local: คืนยอดเก่า บวกยอดใหม่
-    if(oldItem.type==='เพิ่มเงิน'){
-      const a=getAcctLocal();
-      a[acctName]=(a[acctName]||0)-oldAmt+amt;
-      setAcctLocal(a);
-      updateBalanceDisplay();
-    }
     h[idx].amount=amt;
     h[idx].note=note;
     if(dateVal){
-      // ใช้ toLocalISO เพื่อ avoid timezone issues
+      // แปลง date input (local) กลับเป็น ISO โดยใช้ timezone ไทย
       const parts=dateVal.split('-');
-      h[idx].date=parts[0]+'-'+parts[1]+'-'+parts[2]+'T12:00:00';
-      h[idx].day=parseInt(parts[2]);
+      const newDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]),12,0,0);
+      h[idx].date=newDate.toISOString();
     }
     localStorage.setItem('acct_history',JSON.stringify(h));
-    // sync ไป Sheets
-    const url=getUrl();
-    if(url){
-      const updatedItem={...h[idx]};
-      const form=new FormData();
-      form.append('payload',JSON.stringify({action:'editAcctHistory',item:updatedItem,oldAmount:oldAmt}));
-      fetch(url,{method:'POST',mode:'no-cors',body:form}).catch(()=>{});
-    }
   }
   closeModal('modal-hist-edit');
   renderAcctHistory();showToast('แก้ไขประวัติแล้ว ✓','g');
 }
 
 function deleteAcctHistory(id){
+  if(!confirm('ลบรายการนี้?'))return;
   // ดึงรายการที่จะลบก่อน เพื่อคืนยอดบัญชี
   const item=getAcctHistory().find(i=>String(i.id)===String(id));
   const h=getAcctHistory().filter(i=>String(i.id)!==String(id));
