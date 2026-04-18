@@ -8,14 +8,11 @@
 <meta name="apple-mobile-web-app-title" content="จดรายจ่าย">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#020617">
-<title>จดรายจ่าย v2</title>
+<title>จดรายจ่าย v20</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#1e1b4b;--bg2:rgba(255,255,255,0.08);--bg3:rgba(255,255,255,0.12);--bg4:rgba(255,255,255,0.18);
-  --border:rgba(255,255,255,0.15);--border2:rgba(255,255,255,0.25);
-  --text:#ffffff;--text2:rgba(255,255,255,0.85);--text3:rgba(255,255,255,0.55);
-  --green:#10b981;--red:#f43f5e;--amber:#f59e0b;--blue:#60a5fa;--purple:#a78bfa;--teal:#dc2626;--pink:#f472b6;
+  --text:#ffffff;--text2:rgba(255,255,255,0.85);
   --font:'Nunito','Sarabun',sans-serif;--mono:'IBM Plex Mono',monospace;
   --r:16px;--r2:22px;
 }
@@ -155,8 +152,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .amount-curr{font-size:28px;color:rgba(255,255,255,0.5);font-weight:800;}
 .amount-input{flex:1;background:none;border:none;outline:none;font-size:44px;font-weight:800;color:#fff;width:100%;letter-spacing:-1px;font-family:inherit;}
 .amount-input::placeholder{color:rgba(255,255,255,0.3);}
-.amount-input::-webkit-inner-spin-button,.amount-input::-webkit-outer-spin-button{-webkit-appearance:none;}
-.amount-input::-webkit-inner-spin-button,.amount-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .amount-input::-webkit-inner-spin-button,.amount-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 .amount-input[type=number]{-moz-appearance:textfield;}
 .note-input{width:100%;background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1.5px solid rgba(255,255,255,0.2);border-radius:var(--r);padding:14px 16px;color:#fff;font-family:inherit;font-size:16px;font-weight:600;outline:none;resize:none;transition:border-color 0.2s;}
@@ -243,7 +238,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .sort-btn.sort-active{background:linear-gradient(135deg,rgba(59,130,246,0.4),rgba(99,102,241,0.2));color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.2),0 4px 14px rgba(0,0,0,0.3);}
 
 /* ENTRY in date-sort mode */
-.entry-flat{border-radius:14px;border:1px solid rgba(255,255,255,0.12);margin-bottom:6px;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.12) !important;}
+.entry-flat{border-radius:14px;margin-bottom:6px;background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.12);}
 .entry-cat-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-bottom:6px;}
 
 /* DAY GROUP (date-sort mode) */
@@ -261,6 +256,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .cat-head-name{font-size:17px;font-weight:800;color:#fff;}
 .cat-head-total{font-size:19px;font-weight:800;font-family:var(--mono);color:#fff;position:relative;z-index:1;}
 .entry-item{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.15);}
+.entry-item.entry-flat{border-top:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);}
 .entry-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
 .entry-left{flex:1;min-width:0;}
 .entry-date{font-size:13px;color:rgba(255,255,255,0.6);font-family:var(--mono);font-weight:700;margin-bottom:2px;}
@@ -653,9 +649,12 @@ function getEntries(){try{return JSON.parse(localStorage.getItem('exp_v5')||'[]'
 function setEntries(a){localStorage.setItem('exp_v5',JSON.stringify(a));}
 function getAcctLocal(){try{return JSON.parse(localStorage.getItem('acct_v2')||'{"บัญชีหลัก":0,"บัญชีหลิงหลิง":0}');}catch(e){return{"บัญชีหลัก":0,"บัญชีหลิงหลิง":0};}}
 function getAcctHistory(){try{return JSON.parse(localStorage.getItem('acct_history')||'[]');}catch(e){return[];}}
-function addAcctHistory(acct,amount,note,type){
+// UID: Date.now() × 1000 + counter — กัน collision เมื่อกดเร็วใน ms เดียวกัน
+let _uidCounter=0;
+function uid(){ _uidCounter=(_uidCounter+1)%1000; return Date.now()*1000+_uidCounter; }
+function pushAcctHistory(item){
   const h=getAcctHistory();
-  h.unshift({id:Date.now(),acct,amount,note,type,date:new Date().toISOString()});
+  h.unshift(item);
   localStorage.setItem('acct_history',JSON.stringify(h.slice(0,100)));
 }
 function setAcctLocal(a){localStorage.setItem('acct_v2',JSON.stringify(a));}
@@ -740,7 +739,9 @@ function toLocalISO(d){
   return y+'-'+mo+'-'+day+'T'+h+':'+mi+':'+s;
 }
 
+let _saveLock=false;
 function saveEntry(){
+  if(_saveLock)return; // กันกดซ้ำรัวๆ
   const amt=parseFloat(document.getElementById('amount').value.replace(/,/g,''));
   const noteVal=document.getElementById('note').value.trim();
   if(!selCatVal){showToast('เลือกหมวดก่อนนะ','a');return;}
@@ -748,9 +749,10 @@ function saveEntry(){
   if(selPayVal==='บัตรเครดิต'&&!selSubVal){showToast('เลือกบัตรเครดิตให้ครบก่อนนะ','a');return;}
   if(!amt||amt<=0){showToast('ใส่จำนวนเงินก่อนนะ','a');return;}
   if(!noteVal){showToast('ใส่รายละเอียดก่อนนะ','a');document.getElementById('note').focus();return;}
+  _saveLock=true;setTimeout(()=>{_saveLock=false;},400);
   const n=new Date();
   const acctName=LING_CATS.includes(selCatVal)?'บัญชีหลิงหลิง':'บัญชีหลัก';
-  const entry={id:Date.now(),cat:selCatVal,pay:selPayVal,sub:selSubVal,acct:acctName,amount:amt,note:noteVal,date:toLocalISO(n),d:n.getDate(),m:n.getMonth(),y:n.getFullYear(),synced:false};
+  const entry={id:uid(),cat:selCatVal,pay:selPayVal,sub:selSubVal,acct:acctName,amount:amt,note:noteVal,date:toLocalISO(n),d:n.getDate(),m:n.getMonth(),y:n.getFullYear(),synced:false};
   const all=getEntries();all.push(entry);setEntries(all);
   // deduct from local balance
   const a=getAcctLocal();a[acctName]=(a[acctName]||0)-amt;setAcctLocal(a);
@@ -816,8 +818,8 @@ async function addMoney(){
   updateBalanceDisplay();
   document.getElementById('add-amount').value='';document.getElementById('add-note').value='';
   const _nt=new Date();
-  const histItem={id:Date.now(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:toLocalISO(_nt)};
-  addAcctHistory(addAcctSel,amt,note||'เพิ่มเงิน','เพิ่มเงิน');
+  const histItem={id:uid(),acct:addAcctSel,amount:amt,note:note||'เพิ่มเงิน',type:'เพิ่มเงิน',date:toLocalISO(_nt)};
+  pushAcctHistory(histItem);
   renderAcctHistory();
   showToast('เพิ่มเงินเข้า '+addAcctSel+' แล้ว ✓','g');
   const url=getUrl();
@@ -842,8 +844,8 @@ async function saveBalance(){
   // set ยอดคงเหลือใน local
   const a=getAcctLocal();a[name]=amt;setAcctLocal(a);
   const _nt2=new Date();
-  const histItem2={id:Date.now(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:toLocalISO(_nt2)};
-  addAcctHistory(name,amt,'แก้ไขยอดโดยตรง','แก้ไขยอด');
+  const histItem2={id:uid(),acct:name,amount:amt,note:'แก้ไขยอดโดยตรง',type:'แก้ไขยอด',date:toLocalISO(_nt2)};
+  pushAcctHistory(histItem2);
   updateBalanceDisplay();closeModal('modal-balance');
   renderAcctHistory();
   showToast('แก้ไขยอด '+name+' แล้ว ✓','g');
@@ -874,13 +876,22 @@ async function syncNow(){
   const pending=getEntries().filter(e=>!e.synced);
   if(!pending.length){showToast('ทุกรายการซิงค์แล้ว ✓','g');return;}
   showToast('กำลังซิงค์...','a');
-  const all=getEntries();
-  pending.forEach(p=>{const idx=all.findIndex(e=>e.id===p.id);if(idx>=0)all[idx].synced=true;});
-  setEntries(all);
+  let ok=0,fail=0;
   for(const entry of pending){
-    try{const form=new FormData();form.append('payload',JSON.stringify({action:'addExpense',entry}));await fetch(url,{method:'POST',mode:'no-cors',body:form});}catch(e){}
+    try{
+      const form=new FormData();
+      form.append('payload',JSON.stringify({action:'addExpense',entry}));
+      await fetch(url,{method:'POST',mode:'no-cors',body:form});
+      // mark synced=true เฉพาะรายการที่ส่งสำเร็จ (อ่าน list ใหม่ทุกครั้งกัน race)
+      const cur=getEntries();
+      const i=cur.findIndex(e=>e.id===entry.id);
+      if(i>=0){cur[i].synced=true;setEntries(cur);}
+      ok++;
+    }catch(e){fail++;}
   }
-  updateSyncStatus();showToast('ซิงค์แล้ว ✓','g');
+  updateSyncStatus();
+  if(fail===0)showToast('ซิงค์แล้ว '+ok+' รายการ ✓','g');
+  else showToast('ซิงค์สำเร็จ '+ok+' / ล้มเหลว '+fail,'a');
 }
 
 async function restoreFromSheets(){
@@ -916,6 +927,10 @@ async function restoreFromSheets(){
       }
       updateSyncStatus();renderSummary();
       showToast('กู้คืนสำเร็จ '+( json.entries?json.entries.length:0)+' รายการ ✓','g');
+    }else{
+      // response มาแต่ไม่ใช่ ok — แจ้ง user
+      const msg=(json&&json.message)?json.message:'server ตอบกลับผิดพลาด';
+      showToast('ดึงข้อมูลไม่ได้: '+msg,'r');
     }
   }catch(err){showToast('ดึงข้อมูลไม่ได้ ลองใหม่','r');}
 }
